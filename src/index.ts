@@ -1,2 +1,2 @@
-import "hono";
-export { default } from "./index.tsx";
+import { Hono } from "hono";
+export { default } from "./app";
