@@ -3,7 +3,8 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "start": "bun run src/index.ts"
+    "start": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir=dist --target=node --format=esm"
   },
   "dependencies": {
     "hono": "^4.7.9",

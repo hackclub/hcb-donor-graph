@@ -1,5 +1,6 @@
 {
+  "buildCommand": "bun build src/index.ts --outdir=dist --target=node --format=esm",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/src/index.ts" }
+    { "source": "/(.*)", "destination": "/dist/index.js" }
   ]
 }
