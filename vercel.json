@@ -1,3 +1,8 @@
 {
-  "bunVersion": "1.x"
+  "buildCommand": "true",
+  "installCommand": "bun install",
+  "bunVersion": "1.x",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/src/index.tsx" }
+  ]
 }
