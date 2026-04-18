@@ -14,7 +14,7 @@ export const AvatarGrid = ({
     gap = 8,
     backgroundColor = "#1a1a1a",
 }: AvatarGridProps) => {
-    const containerStyle: React.CSSProperties = {
+    const containerStyle = {
         display: "flex",
         flexDirection: "row",
         flexWrap: "wrap",
@@ -25,15 +25,15 @@ export const AvatarGrid = ({
         width: "100%",
         height: "100%",
         boxSizing: "border-box",
-    };
+    } as const;
 
-    const avatarStyle: React.CSSProperties = {
+    const avatarStyle = {
         width: `${avatarSize}px`,
         height: `${avatarSize}px`,
         borderRadius: "50%",
-        objectFit: "cover", // Ensure the image covers the area, cropping if necessary
+        objectFit: "cover",
         border: "2px solid #4a4a4a",
-    };
+    } as const;
 
     return (
         <div
