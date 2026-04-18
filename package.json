@@ -1,8 +1,8 @@
 {
   "name": "hcb-donor-graph",
   "scripts": {
-    "dev": "bun run --hot src/app.tsx",
-    "start": "bun run src/app.tsx"
+    "dev": "bun run --hot src/index.ts",
+    "start": "bun run src/index.ts"
   },
   "dependencies": {
     "hono": "^4.7.9",

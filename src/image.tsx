@@ -1,4 +1,7 @@
 import React from "react";
+import satori from "satori";
+import sharp from "sharp";
+import { generateNoDonors, generateNotFound } from "./messages";
 
 interface AvatarGridProps {
     avatarUrls: string[];
@@ -8,7 +11,7 @@ interface AvatarGridProps {
     backgroundColor?: string;
 }
 
-export const AvatarGrid = ({
+const AvatarGrid = ({
     avatarUrls,
     avatarSize = 60,
     gap = 8,
@@ -57,3 +60,33 @@ export const AvatarGrid = ({
         </div>
     );
 };
+
+export async function generateAvatarGridImage(
+    width: number,
+    height: number,
+    avatarUrls: string[],
+    iconSize: number,
+    gap: number,
+    orgSlug: string
+) {
+    if (avatarUrls.length === 0) {
+        console.log("No avatars found, generating empty image");
+        const response = await fetch(`http://hcb.hackclub.com/api/v3/organizations/${orgSlug}`);
+        if (response.status === 404) {
+            return await generateNotFound(orgSlug);
+        }
+        const orgData = await response.json();
+        return await generateNoDonors(orgData.name);
+    }
+
+    const svg = await satori(
+        <AvatarGrid avatarUrls={avatarUrls} avatarSize={iconSize} gap={gap} />,
+        {
+            width,
+            height,
+            fonts: [],
+        }
+    );
+
+    return sharp(Buffer.from(svg)).png({ quality: 100 }).toBuffer();
+}
