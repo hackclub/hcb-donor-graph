@@ -1,7 +1,7 @@
 import React from "react";
 import satori from "satori";
 import sharp from "sharp";
-import { generateNoDonors, generateNotFound } from "./messages";
+import { generateNoDonors, generateNotFound } from "./messages.js";
 
 interface AvatarGridProps {
     avatarUrls: string[];
