@@ -167,8 +167,4 @@ app.get("/:orgslug", async (c) => {
 
 app.get("*", (c) => c.redirect("https://github.com/hackclub/hcb-donor-graph"));
 
-Bun.serve({
-  fetch: app.fetch,
-  idleTimeout: 60,
-});
-console.log("Server running on http://localhost:3000");
+export default app;
