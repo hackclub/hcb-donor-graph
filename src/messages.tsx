@@ -58,22 +58,30 @@ function NotFound({ orgSlug }: { orgSlug: string }) {
     );
 }
 
-const satoriOptions = {
-    width,
-    height,
-    fonts: [
-        {
-            name: "Inter",
-            data: await readFile("fonts/Inter-SemiBold.ttf"),
-            weight: 400,
-            style: "normal",
-        },
-    ],
-};
+let fontData: Buffer | null = null;
+
+async function getFontData(): Promise<Buffer> {
+    if (!fontData) {
+        fontData = await readFile("fonts/Inter-SemiBold.ttf");
+    }
+    return fontData;
+}
+
 async function generateMessage(children: React.ReactNode): Promise<Buffer> {
     const svg = await satori(
         children,
-        satoriOptions as SatoriOptions
+        {
+            width,
+            height,
+            fonts: [
+                {
+                    name: "Inter",
+                    data: await getFontData(),
+                    weight: 400,
+                    style: "normal",
+                },
+            ],
+        } as SatoriOptions
     );
     return sharp(Buffer.from(svg)).png({ quality: 100 }).toBuffer();
 }
