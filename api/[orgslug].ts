@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const DONATIONS_PER_PAGE = 100;
 const DONATION_PAGE = 1;
@@ -8,8 +8,6 @@ const DEFAULT_GAP = 12;
 const DEFAULT_MAX_COLUMNS = 9;
 const DEFAULT_MAX_ROWS = 4;
 const FETCH_TIMEOUT_MS = 900;
-
-const app = new Hono();
 
 function clamp(value: number, min: number, max: number) {
   if (!Number.isFinite(value)) return min;
@@ -68,16 +66,17 @@ function buildAvatarGridSvg(
 </svg>`;
 }
 
-app.get("/:orgslug", async (c) => {
-  const orgSlug = c.req.param("orgslug");
-  const iconSize = clamp(Number(c.req.query("icon_size")) || DEFAULT_ICON_SIZE, 20, 256);
-  const gap = clamp(Number(c.req.query("gap")) || DEFAULT_GAP, 0, 64);
-  const maxColumns = clamp(
-    Number(c.req.query("max_columns")) || DEFAULT_MAX_COLUMNS,
-    1,
-    DEFAULT_MAX_COLUMNS
-  );
-  const maxRows = clamp(Number(c.req.query("max_rows")) || DEFAULT_MAX_ROWS, 1, DEFAULT_MAX_ROWS);
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const orgSlug = req.query.orgslug;
+  if (typeof orgSlug !== "string" || orgSlug.length === 0) {
+    res.status(307).setHeader("Location", "https://github.com/hackclub/hcb-donor-graph").end();
+    return;
+  }
+
+  const iconSize = clamp(Number(req.query.icon_size) || DEFAULT_ICON_SIZE, 20, 256);
+  const gap = clamp(Number(req.query.gap) || DEFAULT_GAP, 0, 64);
+  const maxColumns = clamp(Number(req.query.max_columns) || DEFAULT_MAX_COLUMNS, 1, DEFAULT_MAX_COLUMNS);
+  const maxRows = clamp(Number(req.query.max_rows) || DEFAULT_MAX_ROWS, 1, DEFAULT_MAX_ROWS);
 
   const requestedCount = maxColumns * maxRows;
   const limitCount = Math.min(requestedCount, MAX_AVATARS);
@@ -95,11 +94,13 @@ app.get("/:orgslug", async (c) => {
     data = [];
   }
 
-  const avatarUrls = [...new Set(
-    data
-      .map((d: any) => d?.donor?.avatar?.replace("/128/", `/${iconSize}/`))
-      .filter((url: unknown): url is string => typeof url === "string" && url.length > 0)
-  )].slice(0, limitCount);
+  const avatarUrls = [
+    ...new Set(
+      data
+        .map((d: any) => d?.donor?.avatar?.replace("/128/", `/${iconSize}/`))
+        .filter((url: unknown): url is string => typeof url === "string" && url.length > 0)
+    ),
+  ].slice(0, limitCount);
 
   const columns = Math.max(1, Math.min(maxColumns, avatarUrls.length || maxColumns));
   const rows = Math.max(1, Math.ceil(Math.max(1, avatarUrls.length) / columns));
@@ -112,11 +113,7 @@ app.get("/:orgslug", async (c) => {
       ? buildAvatarGridSvg(width, height, avatarUrls, iconSize, gap, columns)
       : buildMessageSvg(width, height, `No donors yet for ${orgSlug}`);
 
-  c.header("Content-Type", "image/svg+xml; charset=utf-8");
-  c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=86400");
-  return c.body(svg);
-});
-
-app.get("*", (c) => c.redirect("https://github.com/hackclub/hcb-donor-graph"));
-
-export default app;
+  res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
+  res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=86400");
+  res.status(200).send(svg);
+}

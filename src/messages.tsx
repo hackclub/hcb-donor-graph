@@ -1,7 +1,6 @@
 import { readFile } from "node:fs/promises";
 import React from "react";
 import satori, { SatoriOptions } from "satori";
-import sharp from "sharp";
 
 const width = 700;
 const height = 160;
@@ -84,7 +83,7 @@ async function generateMessage(children: React.ReactNode): Promise<Buffer> {
             ],
         } as SatoriOptions
     );
-    return sharp(Buffer.from(svg)).png({ quality: 100 }).toBuffer();
+    return Buffer.from(svg);
 }
 
 export async function generateNoDonors(orgName: string): Promise<Buffer> {
