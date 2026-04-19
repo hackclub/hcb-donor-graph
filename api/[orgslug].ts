@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import sharp from "sharp";
+
+const IS_BUN_RUNTIME = typeof Bun !== "undefined";
 
 const DONATIONS_PER_PAGE = 100;
 const MAX_AVATARS = DONATIONS_PER_PAGE;
@@ -153,6 +154,7 @@ async function embedAvatarUrls(urls: string[]): Promise<string[]> {
 }
 
 async function svgToPng(svg: string): Promise<Buffer> {
+  const sharp = (await import("sharp")).default;
   return sharp(Buffer.from(svg)).png({ quality: 90 }).toBuffer();
 }
 
@@ -191,7 +193,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=86400");
 
-  if (format === "svg") {
+  if (format === "svg" || IS_BUN_RUNTIME) {
     res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
     res.status(200).send(svg);
     return;
