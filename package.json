@@ -1,8 +1,10 @@
 {
   "name": "hcb-donor-graph",
+  "type": "module",
   "scripts": {
-    "dev": "bun run --hot src/index.tsx",
-    "start": "bun run src/index.tsx"
+    "dev": "bun run --hot src/index.ts",
+    "start": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir=dist --target=node --format=esm"
   },
   "dependencies": {
     "hono": "^4.7.9",
@@ -12,6 +14,7 @@
     "sharp": "^0.34.1"
   },
   "devDependencies": {
+    "@vercel/node": "^5.3.24",
     "@types/bun": "latest",
     "@types/react": "^19.1.4"
   }

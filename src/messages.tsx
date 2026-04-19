@@ -1,7 +1,6 @@
 import { readFile } from "node:fs/promises";
 import React from "react";
 import satori, { SatoriOptions } from "satori";
-import sharp from "sharp";
 
 const width = 700;
 const height = 160;
@@ -58,24 +57,33 @@ function NotFound({ orgSlug }: { orgSlug: string }) {
     );
 }
 
-const satoriOptions = {
-    width,
-    height,
-    fonts: [
-        {
-            name: "Inter",
-            data: await readFile("fonts/Inter-SemiBold.ttf"),
-            weight: 400,
-            style: "normal",
-        },
-    ],
-};
+let fontData: Buffer | null = null;
+
+async function getFontData(): Promise<Buffer> {
+    if (!fontData) {
+        const fontUrl = new URL("../fonts/Inter-SemiBold.ttf", import.meta.url);
+        fontData = await readFile(fontUrl);
+    }
+    return fontData;
+}
+
 async function generateMessage(children: React.ReactNode): Promise<Buffer> {
     const svg = await satori(
         children,
-        satoriOptions as SatoriOptions
+        {
+            width,
+            height,
+            fonts: [
+                {
+                    name: "Inter",
+                    data: await getFontData(),
+                    weight: 400,
+                    style: "normal",
+                },
+            ],
+        } as SatoriOptions
     );
-    return sharp(Buffer.from(svg)).png({ quality: 100 }).toBuffer();
+    return Buffer.from(svg);
 }
 
 export async function generateNoDonors(orgName: string): Promise<Buffer> {

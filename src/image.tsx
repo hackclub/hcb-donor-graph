@@ -1,4 +1,6 @@
-import React from "react";
+import satori from "satori";
+import sharp from "sharp";
+import { generateNoDonors, generateNotFound } from "./messages";
 
 interface AvatarGridProps {
     avatarUrls: string[];
@@ -8,13 +10,13 @@ interface AvatarGridProps {
     backgroundColor?: string;
 }
 
-export const AvatarGrid = ({
+const AvatarGrid = ({
     avatarUrls,
     avatarSize = 60,
     gap = 8,
     backgroundColor = "#1a1a1a",
 }: AvatarGridProps) => {
-    const containerStyle: React.CSSProperties = {
+    const containerStyle = {
         display: "flex",
         flexDirection: "row",
         flexWrap: "wrap",
@@ -25,15 +27,15 @@ export const AvatarGrid = ({
         width: "100%",
         height: "100%",
         boxSizing: "border-box",
-    };
+    } as const;
 
-    const avatarStyle: React.CSSProperties = {
+    const avatarStyle = {
         width: `${avatarSize}px`,
         height: `${avatarSize}px`,
         borderRadius: "50%",
-        objectFit: "cover", // Ensure the image covers the area, cropping if necessary
+        objectFit: "cover",
         border: "2px solid #4a4a4a",
-    };
+    } as const;
 
     return (
         <div
@@ -57,3 +59,33 @@ export const AvatarGrid = ({
         </div>
     );
 };
+
+export async function generateAvatarGridImage(
+    width: number,
+    height: number,
+    avatarUrls: string[],
+    iconSize: number,
+    gap: number,
+    orgSlug: string
+) {
+    if (avatarUrls.length === 0) {
+        console.log("No avatars found, generating empty image");
+        const response = await fetch(`https://hcb.hackclub.com/api/v3/organizations/${orgSlug}`);
+        if (response.status === 404) {
+            return await generateNotFound(orgSlug);
+        }
+        const orgData = await response.json();
+        return await generateNoDonors(orgData.name);
+    }
+
+    const svg = await satori(
+        <AvatarGrid avatarUrls={avatarUrls} avatarSize={iconSize} gap={gap} />,
+        {
+            width,
+            height,
+            fonts: [],
+        }
+    );
+
+    return sharp(Buffer.from(svg)).png({ quality: 100 }).toBuffer();
+}

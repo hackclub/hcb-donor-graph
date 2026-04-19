@@ -1,0 +1,14 @@
+{
+  "buildCommand": "bun run build",
+  "installCommand": "bun install",
+  "bunVersion": "1.x",
+  "functions": {
+    "api/*.ts": {
+      "maxDuration": 5
+    }
+  },
+  "rewrites": [
+    { "source": "/", "destination": "/api/index" },
+    { "source": "/:orgslug", "destination": "/api/:orgslug" }
+  ]
+}
