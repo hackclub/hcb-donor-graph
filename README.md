@@ -2,8 +2,8 @@
 
 Create a donor graph for transparent HCB organisations.
 
-<img src="https://graph.hcb.hackclub.com/hq?max_rows=5">
-<sub>Hack Club HQ's donor graph (first five rows)</sub>
+<img src="https://graph.hcb.hackclub.com/hq?max_rows=6">
+<sub>Hack Club HQ's donor graph (first six rows)</sub>
 
 ## Docs
 
