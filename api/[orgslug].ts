@@ -72,7 +72,11 @@ function buildAvatarGridSvg(
 </svg>`;
 }
 
-async function collectAvatarUrls(orgSlug: string, iconSize: number, wanted: number): Promise<string[]> {
+async function collectAvatarUrls(
+  orgSlug: string,
+  iconSize: number,
+  wanted: number
+): Promise<{ avatarUrls: string[]; notFound: boolean }> {
   const target = Math.min(wanted, MAX_AVATARS);
   const uniqueUrls = new Set<string>();
 
@@ -81,6 +85,9 @@ async function collectAvatarUrls(orgSlug: string, iconSize: number, wanted: numb
 
     try {
       const response = await fetch(donationUrl, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+      if (response.status === 404 && page === 1) {
+        return { avatarUrls: [], notFound: true };
+      }
       if (!response.ok) {
         continue;
       }
@@ -96,7 +103,7 @@ async function collectAvatarUrls(orgSlug: string, iconSize: number, wanted: numb
         if (typeof avatar === "string" && avatar.length > 0) {
           uniqueUrls.add(avatar);
           if (uniqueUrls.size >= target) {
-            return [...uniqueUrls].slice(0, target);
+            return { avatarUrls: [...uniqueUrls].slice(0, target), notFound: false };
           }
         }
       }
@@ -105,7 +112,7 @@ async function collectAvatarUrls(orgSlug: string, iconSize: number, wanted: numb
     }
   }
 
-  return [...uniqueUrls].slice(0, target);
+  return { avatarUrls: [...uniqueUrls].slice(0, target), notFound: false };
 }
 
 async function fetchAvatarDataUrl(url: string): Promise<string | null> {
@@ -163,7 +170,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const format = typeof req.query.format === "string" ? req.query.format.toLowerCase() : "png";
 
   const requestedCount = maxColumns * maxRows;
-  const avatarUrls = await collectAvatarUrls(orgSlug, iconSize, requestedCount);
+  const { avatarUrls, notFound } = await collectAvatarUrls(orgSlug, iconSize, requestedCount);
+  if (notFound) {
+    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=86400");
+    res.status(404).send("Organization not found");
+    return;
+  }
   const embeddedAvatarUrls = await embedAvatarUrls(avatarUrls);
 
   const columns = Math.max(1, Math.min(maxColumns, embeddedAvatarUrls.length || maxColumns));
