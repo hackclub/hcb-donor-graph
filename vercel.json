@@ -4,7 +4,8 @@
   "bunVersion": "1.x",
   "functions": {
     "api/index.ts": {
-      "includeFiles": "fonts/**"
+      "includeFiles": "fonts/**",
+      "maxDuration": 60
     }
   },
   "rewrites": [

@@ -6,9 +6,13 @@ const avatarCache = new Map();
 const CACHE_TTL = 1000 * 60 * 60 * 24; // 24h
 
 // Concurrency & retry settings
-const CONCURRENCY = 50;
-const MAX_RETRIES = 3;
-const INITIAL_BACKOFF = 500; // ms
+const CONCURRENCY = 24;
+const MAX_RETRIES = 2;
+const INITIAL_BACKOFF = 250; // ms
+const DONATION_PAGES = 15;
+const DONATIONS_PER_PAGE = 100;
+const FETCH_TIMEOUT_MS = 1800;
+const MAX_AVATARS = 64;
 
 const limit = pLimit(CONCURRENCY);
 
@@ -20,7 +24,7 @@ async function fetchAvatarBase64(url: string, attempt = 1) {
   }
 
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (res.status === 429 && attempt <= MAX_RETRIES) {
       const retryAfter = Number(res.headers.get("Retry-After") || 1) * 1000;
       const backoff = Math.max(INITIAL_BACKOFF * attempt, retryAfter);
@@ -59,6 +63,60 @@ async function downloadAllAvatars(urls: string[]) {
   return results.filter((b) => b !== null);
 }
 
+async function fetchDonationPage(orgSlug: string, iconSize: number, page: number) {
+  return fetch(
+    `https://hcb.hackclub.com/api/v3/organizations/${orgSlug}/donations?per_page=${DONATIONS_PER_PAGE}&page=${page}`,
+    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
+  )
+    .then((r) => (r.ok ? r.json() : []))
+    .then((data) =>
+      (Array.isArray(data) ? data : [])
+        .map((d: any) => d.donor?.avatar?.replace("/128/", `/${iconSize}/`))
+        .filter(Boolean)
+    )
+    .catch(() => []);
+}
+
+async function collectAvatarUrls(orgSlug: string, iconSize: number, limitCount: number) {
+  const uniqueUrls = new Set<string>();
+
+  const initialPages = Math.min(
+    DONATION_PAGES,
+    Math.max(1, Math.ceil(limitCount / DONATIONS_PER_PAGE))
+  );
+
+  const firstBatch = await Promise.all(
+    Array.from({ length: initialPages }, (_, i) =>
+      fetchDonationPage(orgSlug, iconSize, i + 1)
+    )
+  );
+
+  for (const page of firstBatch) {
+    for (const url of page) {
+      uniqueUrls.add(url);
+      if (uniqueUrls.size >= limitCount) {
+        return [...uniqueUrls].slice(0, limitCount);
+      }
+    }
+  }
+
+  for (let page = initialPages + 1; page <= DONATION_PAGES; page++) {
+    const urls = await fetchDonationPage(orgSlug, iconSize, page);
+    if (urls.length === 0) {
+      break;
+    }
+
+    for (const url of urls) {
+      uniqueUrls.add(url);
+      if (uniqueUrls.size >= limitCount) {
+        return [...uniqueUrls].slice(0, limitCount);
+      }
+    }
+  }
+
+  return [...uniqueUrls].slice(0, limitCount);
+}
+
 const app = new Hono();
 
 app.get("/:orgslug", async (c) => {
@@ -72,32 +130,17 @@ app.get("/:orgslug", async (c) => {
 
   console.log(`Generating grid for ${orgSlug}, size ${iconSize}, gap ${gap} `);
 
-  // fetch donation pages in parallel
+  // fetch donation pages based on required avatar count
+  const requestedCount = isFinite(maxRows) ? maxColumns * maxRows : MAX_AVATARS;
+  const limitCount = Math.min(requestedCount, MAX_AVATARS);
   console.time("fetchDonations");
-  const pageFetches = Array.from({ length: 15 }, (_, i) =>
-    fetch(
-      `https://hcb.hackclub.com/api/v3/organizations/${orgSlug}/donations?per_page=100&page=${i + 1}`
-    )
-      .then((r) => r.json())
-      .then((data) =>
-        data
-          .map((d: any) => d.donor?.avatar?.replace("/128/", `/${iconSize}/`))
-          .filter(Boolean)
-      )
-      .catch(() => [])
-  );
-  const pages = await Promise.all(pageFetches);
+  const avatarUrls = await collectAvatarUrls(orgSlug, iconSize, limitCount);
   console.timeEnd("fetchDonations");
-
-  // don't download more avatars than we need
-  const allAvatarUrls = [...new Set(pages.flat())];
-  const limitCount = isFinite(maxRows) ? maxColumns * maxRows : allAvatarUrls.length;
-  const avatarUrls = allAvatarUrls.slice(0, limitCount);
 
   // determine layout based off number of avatars
   const count = avatarUrls.length;
-  let columns = Math.min(maxColumns, count);
-  let rows = Math.ceil(count / columns);
+  let columns = count === 0 ? 1 : Math.min(maxColumns, count);
+  let rows = count === 0 ? 1 : Math.ceil(count / columns);
   if (rows > maxRows) rows = maxRows;
 
   // calculate dimensions if not provided
