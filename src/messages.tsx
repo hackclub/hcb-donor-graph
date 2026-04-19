@@ -62,7 +62,8 @@ let fontData: Buffer | null = null;
 
 async function getFontData(): Promise<Buffer> {
     if (!fontData) {
-        fontData = await readFile("fonts/Inter-SemiBold.ttf");
+        const fontUrl = new URL("../fonts/Inter-SemiBold.ttf", import.meta.url);
+        fontData = await readFile(fontUrl);
     }
     return fontData;
 }

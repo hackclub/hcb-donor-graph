@@ -2,7 +2,12 @@
   "buildCommand": "true",
   "installCommand": "bun install",
   "bunVersion": "1.x",
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": "fonts/**"
+    }
+  },
   "rewrites": [
-    { "source": "/(.*)", "destination": "/src/index.tsx" }
+    { "source": "/(.*)", "destination": "/api/index" }
   ]
 }

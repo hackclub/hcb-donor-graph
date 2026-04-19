@@ -1,7 +1,6 @@
-import React from "react";
 import satori from "satori";
 import sharp from "sharp";
-import { generateNoDonors, generateNotFound } from "./messages.js";
+import { generateNoDonors, generateNotFound } from "./messages";
 
 interface AvatarGridProps {
     avatarUrls: string[];
@@ -71,7 +70,7 @@ export async function generateAvatarGridImage(
 ) {
     if (avatarUrls.length === 0) {
         console.log("No avatars found, generating empty image");
-        const response = await fetch(`http://hcb.hackclub.com/api/v3/organizations/${orgSlug}`);
+        const response = await fetch(`https://hcb.hackclub.com/api/v3/organizations/${orgSlug}`);
         if (response.status === 404) {
             return await generateNotFound(orgSlug);
         }

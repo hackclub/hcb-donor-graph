@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import pLimit from "p-limit";
-import { generateAvatarGridImage } from "./image.js";
+import { generateAvatarGridImage } from "./image";
 
 const avatarCache = new Map();
 const CACHE_TTL = 1000 * 60 * 60 * 24; // 24h
