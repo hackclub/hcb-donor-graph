@@ -2,12 +2,12 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const DONATIONS_PER_PAGE = 100;
 const DONATION_PAGE = 1;
-const MAX_AVATARS = 20;
+const MAX_AVATARS = DONATIONS_PER_PAGE;
 const DEFAULT_ICON_SIZE = 64;
 const DEFAULT_GAP = 12;
-const DEFAULT_MAX_COLUMNS = 9;
-const DEFAULT_MAX_ROWS = 4;
-const FETCH_TIMEOUT_MS = 900;
+const DEFAULT_MAX_COLUMNS = 15;
+const DEFAULT_MAX_ROWS = 20;
+const FETCH_TIMEOUT_MS = 2500;
 
 function clamp(value: number, min: number, max: number) {
   if (!Number.isFinite(value)) return min;
@@ -75,8 +75,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const iconSize = clamp(Number(req.query.icon_size) || DEFAULT_ICON_SIZE, 20, 256);
   const gap = clamp(Number(req.query.gap) || DEFAULT_GAP, 0, 64);
-  const maxColumns = clamp(Number(req.query.max_columns) || DEFAULT_MAX_COLUMNS, 1, DEFAULT_MAX_COLUMNS);
-  const maxRows = clamp(Number(req.query.max_rows) || DEFAULT_MAX_ROWS, 1, DEFAULT_MAX_ROWS);
+  const maxColumns = clamp(Number(req.query.max_columns) || DEFAULT_MAX_COLUMNS, 1, 100);
+  const maxRows = clamp(Number(req.query.max_rows) || DEFAULT_MAX_ROWS, 1, 100);
 
   const requestedCount = maxColumns * maxRows;
   const limitCount = Math.min(requestedCount, MAX_AVATARS);
